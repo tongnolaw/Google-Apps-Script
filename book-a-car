@@ -1,0 +1,150 @@
+//สำหรับฟอร์ม
+function onFormSubmit() {
+  
+  var token1 = ["ryRfQuJjhxL96QH5bCTDzze7YU3PXGm7zzfA9jXgx5N"];//โทเค่นไลน์ผู้มีสิทธิ์อนุมัติ1 พระนเรศ
+  // var token1 = ["4Yms4F8xCHtjTLUcArH7qKyCue4SWWG8RFPgVFP8la1"];//โทเค่นไลน์ ตง
+  var token2 = ["4Yms4F8xCHtjTLUcArH7qKyCue4SWWG8RFPgVFP8la1"];//โทเค่นไลน์ผู้มีสิทธิ์อนุมัติ2 พระอาจารย์พรมสรร
+
+  var form = FormApp.openById('12-zDPIuaF-17-XJQhoExNmbiqPqCQC0KyS4b6nXskrA'); 
+  var fRes = form.getResponses();
+  var formResponse = fRes[fRes.length - 1];
+  var itemResponses = formResponse.getItemResponses();
+  
+  var ss = SpreadsheetApp.openById('1Omza-YTSMuDCoCNtfekuiK1Domk2Poo97XE9isWR7K0');
+  var sheet = ss.getSheetByName('การตอบแบบฟอร์ม 1');
+  var row = sheet.getActiveRange().getLastRow()+1;
+  // var row = 1;
+
+  //ให้ไปสร้างลิสต์อนุมัติในชีตแผ่น 2 เพื่อดึงค่ามาแสดงที่ชีตแผ่น 1
+   var dynamicList = ss.getSheetByName('Options').getRange('A2:A4');
+   var rangeRule = SpreadsheetApp.newDataValidation().requireValueInRange(dynamicList).build();
+   sheet.getRange(row,11).setDataValidation(rangeRule); //คอลัมน์ที่ใช้อนุมัติ คือ 11
+
+  //ให้ไปสร้างลิสต์สารถีในชีตแผ่น 2 เพื่อดึงค่ามาแสดงที่ชีตแผ่น 1
+   var dynamicList2 = ss.getSheetByName('Options').getRange('B2:B5');
+   var rangeRule2 = SpreadsheetApp.newDataValidation().requireValueInRange(dynamicList2).build();
+   sheet.getRange(row,5).setDataValidation(rangeRule2); //คอลัมน์ที่ใช้เลือกสารถี คือ 5
+
+   //ให้ไปสร้างลิสต์รถในชีตแผ่น 2 เพื่อดึงค่ามาแสดงที่ชีตแผ่น 1
+   var dynamicList2 = ss.getSheetByName('Options').getRange('C2:C5');
+   var rangeRule2 = SpreadsheetApp.newDataValidation().requireValueInRange(dynamicList2).build();
+   sheet.getRange(row,3).setDataValidation(rangeRule2); //คอลัมน์ที่ใช้เลือกรถ คือ 3
+  
+  var msg = '\n'+
+  '' +itemResponses[0].getResponse() + ' : ส่งเรื่องขออนุมัติ' +'\n'+ 
+  'รถ: ' +itemResponses[1].getResponse()+'\n'+
+  'เพื่อ: ' +itemResponses[2].getResponse()+'\n'+
+  'คนขับ: ' +itemResponses[3].getResponse()+'\n'+ 
+  'รับที่: ' +itemResponses[4].getResponse()+'\n'+ 
+  'ส่งที่: ' +itemResponses[5].getResponse()+'\n'+ 
+  'ออกไป: ' +itemResponses[6].getResponse()+'\n'+ 
+  'กลับ: ' +itemResponses[7].getResponse()+'\n'+ 
+  'Tel. ' +itemResponses[8].getResponse()+'\n'+ 
+  'กำลัง '+itemResponses[9].getResponse()+'\n'+ 
+  ss.getUrl();;
+
+  sendLineNotify(msg,token1);
+  sendLineNotify(msg,token2);
+}
+
+function sendLineNotify(message,token) {
+  var options = {
+    "method": "post",
+    "payload": "message=" + message,
+    "headers": {
+    "Authorization": "Bearer " + token }
+};
+
+UrlFetchApp.fetch("https://notify-api.line.me/api/notify", options);
+}
+
+//สำหรับชีต
+function approve() {
+   var token3 = "UfWQXYcxIOlfBW6EeTrmohh5z62x0LiMOVsYLlNgtXs";//โทเค่นไลน์กลุ่มเขตใน
+  //  var token3 = "4Yms4F8xCHtjTLUcArH7qKyCue4SWWG8RFPgVFP8la1";//โทเค่นไลน์กลุ่มตง
+   var ss = SpreadsheetApp.getActiveSpreadsheet();
+   var sheet = ss.getActiveSheet();
+   var row = sheet.getActiveRange().getRow();
+   var cellvalue = sheet.getActiveCell().getValue().toString();
+  
+   
+  //  var date = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/");
+  //  var year = Number(Utilities.formatDate(new Date(), "GMT+7", "yyyy"));
+  //  var thaiyear = Number(Utilities.formatDate(new Date(), "GMT+7", "yyyy"))+543;
+   //var time = Utilities.formatDate(new Date(), "GMT+7", "HH:mm");
+
+  var name = sheet.getRange(row, 2).getValue();
+  var car = sheet.getRange(row, 3).getValue();
+  var objective = sheet.getRange(row, 4).getValue();
+  var driver = sheet.getRange(row, 5).getValue();
+  var start  = sheet.getRange(row, 6).getValue();
+  var destination = sheet.getRange(row, 7).getValue();
+  var startDate = new Date(sheet.getRange(row, 8).getValue());
+  var endDate = new Date(sheet.getRange(row, 9).getValue());
+  var phone = sheet.getRange(row, 10).getValue();
+  
+  var startDateOnly = Utilities.formatDate(startDate, "GMT+7", "d/MM/yyyy");
+  var endDateOnly = Utilities.formatDate(endDate, "GMT+7", "d/MM/yyyy");
+  var startTime = Utilities.formatDate(startDate, "GMT+7", "H.mm");
+  var endTime = Utilities.formatDate(endDate, "GMT+7", "H.mm");
+
+  if(startDateOnly == endDateOnly){
+    var message = '\n'+cellvalue+' รถ '+car+'\n\n'+
+                  'วันที่: '+startDateOnly+'\n'+
+                  'เวลา: '+startTime+'-'+endTime+' น.'+'\n'+
+                  'ผู้จอง: '+name+'\n'+
+                  'โทร: '+phone+'\n'+
+                  'รับที่: '+start+'\n'+
+                  'ส่งที่: '+destination+'\n'+
+                  'รายละเอียด: '+objective+'\n'+
+                  'สารถี: '+driver+'\n\n'+
+                  // 'วันที่แจ้งผล :'+ date+year+'\n'+
+                  '© beta version';
+  }else{
+    var message = '\n'+cellvalue+' รถ '+car+'\n\n'+
+                  'วันที่: '+startDateOnly+'\n'+
+                  'เวลา: '+startTime+' น.'+'\n'+
+                  'ถึงวันที่: '+endDateOnly+'\n'+
+                  'เวลา: '+endTime+' น.'+'\n'+
+                  'ผู้จอง: '+name+'\n'+
+                  'โทร: '+phone+'\n'+
+                  'รับที่: '+start+'\n'+
+                  'ส่งที่: '+destination+'\n'+
+                  'รายละเอียด: '+objective+'\n'+
+                  'สารถี: '+driver+'\n\n'+
+                  // 'วันที่แจ้งผล :'+ date+year+'\n'+
+                  '© beta version';
+  }
+
+  //Creates a calendar event using the submitted data
+  var calendar = CalendarApp.getCalendarById("a9nq5jn4sodujcdkl0h47gimu8@group.calendar.google.com");
+  var titles = (car + '['+ driver+']');
+  var descriptions =  'ผู้จอง: '+name+'\n'+
+                      'โทร: '+phone+'\n'+
+                      'รับที่: '+start+'\n'+
+                      'ส่งที่: '+destination+'\n'+                        
+                      'รายละเอียด: '+objective+'\n'+
+                      'สารถี: '+driver;
+
+  if (cellvalue == '🚫ไม่อนุมัติ' ) {
+
+    sendLineNotify(message, token3);
+
+  }else if(cellvalue == '✅อนุมัติ'){
+  
+    sendLineNotify(message, token3);
+    var event = calendar.createEvent(titles, startDate, endDate, {description: descriptions});
+    
+    if(car == '🚚บษ 9972'){
+      event.setColor (CalendarApp.EventColor.RED);
+    }else if(car == '🚙ขก 8025'){
+      event.setColor (CalendarApp.EventColor.YELLOW);
+    }else if(car == '🚗ผจ 1072'){
+      event.setColor (CalendarApp.EventColor.GREEN);
+    }else if(car == '🚘1ขฮ 7655'){
+      event.setColor (CalendarApp.EventColor.BLUE);
+    }
+
+  }
+  
+}
