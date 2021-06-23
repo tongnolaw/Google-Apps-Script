@@ -1,0 +1,87 @@
+function onFormSubmit() {
+  
+  // var token1 = ["ACchB8vRD9k0jsPXInkcB25UuJ19SsdqZe5U54tlObR"];//โทเค่นไลน์ผู้มีสิทธิ์อนุมัติ
+  
+  // var form = FormApp.openById('1oPWt5fgbqdIRnuXqsNk_yhrl116dhSj10RPDQykgays'); 
+  // var fRes = form.getResponses();
+  // var formResponse = fRes[fRes.length - 1];
+  // var itemResponses = formResponse.getItemResponses();
+  
+  var ss = SpreadsheetApp.openById('1-PRoG4iRCjOy5Ymyu8X34mHpXmAahvmVP6ngNLnNgwE');
+  var sheet = ss.getSheetByName('การตอบแบบฟอร์ม 1');
+  var row = sheet.getActiveRange().getLastRow()+1;
+
+//ให้ไปสร้างลิสต์อนุมัติใช้งานในชีตแผ่น 2 เพื่อดึงค่ามาแสดงที่ชีตแผ่น 1
+   var dynamicList = ss.getSheetByName('ตัวเลือก').getRange('A1:A3');
+   var rangeRule = SpreadsheetApp.newDataValidation().requireValueInRange(dynamicList).build();
+   sheet.getRange(row,5).setDataValidation(rangeRule); //คอลัมน์ที่ใช้อนุมัติ คือ 5=E
+
+  
+// var msg = '\n'+
+//           'ส่งเรื่องแจ้งเตือนไลน์กลุ่มเวลา: '+itemResponses[3].getResponse() +'\n\n'+ 
+//           'ข้อความว่า: '+'\n'+
+//           +itemResponses[2].getResponse() +'\n\n'+ 
+//           'สถานะ: '+itemResponses[4].getResponse() +'\n'+ 
+
+//           ss.getUrl();
+
+  // NotifyApp.sendNotify(token1,msg,image);
+  // sendLineNotify(msg,token1);
+  //MailApp.sendEmail(recipients, subject, body);
+
+}
+
+function sendLineNotify(message,token) {
+  var options = {
+    "method": "post",
+    "payload": "message=" + message,
+    "headers": {
+    "Authorization": "Bearer " + token }
+  };
+  UrlFetchApp.fetch("https://notify-api.line.me/api/notify", options);
+}
+
+function approve(e) {
+  var token2 = "gEjt5Enrtxht3BXRlZnEhxmxxuVnFcD5rfJ2uXI8e6o";//โทเค่นไลน์กลุ่มเขตใน
+  // var token2 = "4Yms4F8xCHtjTLUcArH7qKyCue4SWWG8RFPgVFP8la1";//โทเค่นไลน์กลุ่มtest Eternals
+
+  var ss = SpreadsheetApp.openById('1-PRoG4iRCjOy5Ymyu8X34mHpXmAahvmVP6ngNLnNgwE');
+  var sheet = ss.getSheetByName('การตอบแบบฟอร์ม 1');
+  var lastRow = sheet.getLastRow();
+  //  var lastColumn = sheet.getLastColumn();
+
+  //  var today = Utilities.formatDate(new Date(), "GMT+7", "MMMM dd, yyyy "+notiTime);
+  //  var year = Number(Utilities.formatDate(new Date(), "GMT+7", "yyyy"));
+  //  var thaiyear = Number(Utilities.formatDate(new Date(), "GMT+7", "yyyy"))+543;
+
+   var timeNow = Utilities.formatDate(new Date(), "GMT+7", "H:mm").toString();//เวลาปัจจุบัน
+   // sendLineNotify('\nnow '+time, token2);
+  
+  var ts = ss.getSpreadsheetTimeZone()  
+
+  for (i = 2; i <= lastRow; i++) {
+    var cellvalue = sheet.getRange(i, 5).getValue().toString();
+    var notiTime = Utilities.formatDate(new Date(sheet.getRange(i, 4).getValue().toString()), ts, "H:mm");//เวลาที่แจ้งเตือน
+    
+    if (cellvalue == '♻️ใช้งาน'&& timeNow == notiTime ) {
+      
+      var message = '\n'+sheet.getRange(i, 3).getValue().toString();//ข้อความแจ้ง 
+      var pic = sheet.getRange(i, 2).getValue().toString();//รูปภาพ
+      
+      // var image = pic.replace("open", "uc");
+      var image = 'https://drive.google.com/uc?id='+pic.split('=')[1]
+      
+      NotifyApp.sendNotify(token2,message,image);
+
+      // var options2 = {
+      //     "method" :  "post",
+      //     "payload": {  "message" : "pic",
+      //                   "imageThumbnail":"https://drive.google.com/uc?id=1dc-VfEzEilUBEypz-4-gnGjiNZR388md",
+      //                   "imageFullsize": "https://drive.google.com/uc?id=1dc-VfEzEilUBEypz-4-gnGjiNZR388md"},
+
+      //     "headers" : {"Authorization" : "Bearer " + token2}
+      //   };
+      //   UrlFetchApp.fetch("https://notify-api.line.me/api/notify", options);
+    }
+  }
+}
