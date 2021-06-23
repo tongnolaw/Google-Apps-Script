@@ -1,0 +1,128 @@
+//สำหรับฟอร์ม
+function onFormSubmit() {
+  
+  var tokenE = ["4Yms4F8xCHtjTLUcArH7qKyCue4SWWG8RFPgVFP8la1"];//โทเค่นไลน์กลุ่มEternalตง
+  var token1 = ["paAlZzvjixdaHRpgOzxmVoYFQFd03iqTHzeJ7ddV2RJ"];//โทเค่นไลน์พระแมคอนุมัติ
+
+  var form = FormApp.openById('1TCU7mYrWN_gm0BcpFng1E8Ty9klnphr5I7re0v5_Ml8'); 
+  var fRes = form.getResponses();
+  var formResponse = fRes[fRes.length - 1];
+  var itemResponses = formResponse.getItemResponses();
+  
+  var ss = SpreadsheetApp.openById('1FyT4N3mnM0l9JDxeOhpthD0xwAV8J5pU-594ka6fqUE');
+  var sheet = ss.getSheetByName('การตอบแบบฟอร์ม 1');
+  var row = sheet.getActiveRange().getLastRow()+1;
+
+  //ให้ไปสร้างลิสต์อนุมัติในชีตแผ่น 2 เพื่อดึงค่ามาแสดงที่ชีตแผ่น 1
+   var dynamicList = ss.getSheetByName('แผ่น2').getRange('A1:A4');
+   var rangeRule = SpreadsheetApp.newDataValidation().requireValueInRange(dynamicList).build();
+   sheet.getRange(row,7).setDataValidation(rangeRule); //คอลัมน์ที่ใช้อนุมัติ คือ 7
+  
+  var msg = '\n'+
+            itemResponses[3].getResponse().toString().replaceAll("," , "\n")+'\n'+
+            'วันที่: ' +Utilities.formatDate(new Date(itemResponses[4].getResponse().toString()), "GMT+7", "d/MM/")+
+            (Number(Utilities.formatDate(new Date(itemResponses[4].getResponse().toString()), "GMT+7", "yyyy"))+543)+'\n'+
+            'ชื่อ: '+itemResponses[0].getResponse()+'\n'+
+            'เบอร์โทร: ' +itemResponses[1].getResponse()+'\n'+
+            'Line ID: ' +itemResponses[2].getResponse()+'\n'+
+            'กำลัง '+itemResponses[5].getResponse()+'\n'+
+            ss.getUrl();;
+  
+  sendLineNotify(msg,tokenE);
+  sendLineNotify(msg,token1);
+}
+
+function sendLineNotify(message,token) {
+  var options = {
+    "method": "post",
+    "payload": "message=" + message,
+    "headers": {
+    "Authorization": "Bearer " + token }
+};
+
+UrlFetchApp.fetch("https://notify-api.line.me/api/notify", options);
+}
+
+String.prototype.replaceAll = function(search, replacement) {
+        var target = this;
+        return target.replace(new RegExp(search, 'g'), replacement);
+};
+
+//สำหรับชีต
+function approve() {
+   var tokenE = "4Yms4F8xCHtjTLUcArH7qKyCue4SWWG8RFPgVFP8la1";//โทเค่นไลน์กลุ่มEternalตง
+   var token2 = "uS5iSh19VaQjF31LIm7geB5acOb0wUn4m2J8LF5aVnZ";//โทเค่นไลน์กลุ่มกล่าวถวายภัตตาหาร
+   var ss = SpreadsheetApp.getActiveSpreadsheet();
+   var sheet = ss.getActiveSheet();
+   var row = sheet.getActiveRange().getRow();
+   var cellvalue = sheet.getActiveCell().getValue().toString();
+
+  var name = sheet.getRange(row, 2).getValue();
+  var phone = sheet.getRange(row, 3).getValue();
+  var lineId = sheet.getRange(row, 4).getValue();
+  var objective = sheet.getRange(row, 5).getValue();
+  var spritObj = objective.toString().replaceAll(", " , "\n");
+  var date = new Date(sheet.getRange(row, 6).getValue());
+  // var startDate = new Date(Utilities.formatDate(date, "GMT+7", "MMMM dd, yyyy 10:30:00 Z"));
+  // var endDate = new Date(Utilities.formatDate(date, "GMT+7", "MMMM dd, yyyy 11:00:00 Z"));
+
+
+  
+  var thaiDate = Utilities.formatDate(date, "GMT+7", "d/MM/");
+  var year = Number(Utilities.formatDate(date, "GMT+7", "yyyy"));
+  var thaiYear = year+543;
+  var strThaiYear = thaiYear.toString()
+  //var time = Utilities.formatDate(new Date(), "GMT+7", "HH:mm");
+
+  var rng = sheet.getRange(row, 5)
+  var res = rng.createTextFinder('ที่ดิน').findNext();
+
+  var message = '\n'+cellvalue+'เจ้าภาพกล่าว'+'\n'+
+                spritObj+'\n'+
+                'วันที่: '+thaiDate+strThaiYear+'\n';
+                if(res!==null){
+                  message +='เวลา: 20.30 - 21.00 น.'+'\n';
+                }else{
+                  message +='เวลา: 10.30 - 11.00 น.'+'\n';
+                }
+
+      message +='ชื่อ: '+name+'\n'+                   
+                'เบอร์โทร: '+phone;
+                if (lineId !== null && lineId !== '') {
+                   '\n'+'Line: '+lineId;
+                }
+
+    //Creates a calendar event using the submitted data
+    var calendar = CalendarApp.getCalendarById("gbi61gc9bbr9sg07vkhm8t3vs8@group.calendar.google.com");
+    var titles = (name);
+    var descriptions =  'จองกล่าววันที่: '+thaiDate+strThaiYear+'\n'+
+                        'กล่าวคำถวาย: '+'\n'+
+                        spritObj+'\n'+
+                        'เบอร์โทร: '+phone+'\n';
+                        if (lineId !== null && lineId !== '') {
+                          message += '\n'+'Line ID: '+lineId;
+                        }    
+  
+    if (cellvalue == '✅อนุมัติ' || cellvalue == '🚫ไม่อนุมัติ' ) {
+      
+      sendLineNotify(message, tokenE);
+      sendLineNotify(message, token2);
+    
+      if(cellvalue == '✅อนุมัติ'){
+        // calendar.createEvent(titles, startDate, endDate, {description: descriptions});
+        
+        if(res!==null)calendar.createAllDayEvent('🗺️ที่ดิน: '+name, date, {description: descriptions});
+        var res = rng.createTextFinder('ภัตตาหาร').findNext();
+        if(res!==null)calendar.createAllDayEvent('🍱ภัตตาหาร: '+name, date, {description: descriptions});
+        var res = rng.createTextFinder('ยา').findNext();
+        if(res!==null)calendar.createAllDayEvent('💊ยารักษาโรค: '+name, date, {description: descriptions});
+        var res = rng.createTextFinder('ไทยธรรม').findNext();
+        if(res!==null)calendar.createAllDayEvent('🎁ไทยธรรม: '+name, date, {description: descriptions});
+        var res = rng.createTextFinder('ดอกไม้').findNext();
+        if(res!==null)calendar.createAllDayEvent('🌻ดอกไม้: '+name, date, {description: descriptions});
+        var res = rng.createTextFinder('ปานะ').findNext();
+        if(res!==null)calendar.createAllDayEvent('🧃ปานะ: '+name, date, {description: descriptions});
+        
+      }
+    }
+}
